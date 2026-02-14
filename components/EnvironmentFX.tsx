@@ -19,9 +19,10 @@ import * as THREE from "three";
 interface EnvironmentFXProps {
     mood: number;
     isPowerMode?: boolean;
+    reducedMotion?: boolean;
 }
 
-export default function EnvironmentFX({ mood, isPowerMode = false }: EnvironmentFXProps) {
+export default function EnvironmentFX({ mood, isPowerMode = false, reducedMotion = false }: EnvironmentFXProps) {
     const pointLightRef = useRef<THREE.PointLight>(null!);
     const pointLight2Ref = useRef<THREE.PointLight>(null!);
     const groupRef = useRef<THREE.Group>(null!);
@@ -41,14 +42,15 @@ export default function EnvironmentFX({ mood, isPowerMode = false }: Environment
 
         // Softer pulse on the beat
         // Use a power function to make it sharp but not strobe: x^4 instead of x^10
-        const pulse = Math.pow(Math.sin(beatProgress * Math.PI), 4);
+        const pulse = reducedMotion ? 0 : Math.pow(Math.sin(beatProgress * Math.PI), 4);
 
         // ── Light flicker + Pulse ────────────────────────────
         if (pointLightRef.current) {
             // Organic flicker (Very subtle)
-            const flicker =
+            const flicker = reducedMotion ? 0 : (
                 Math.sin(time * 1.3) * 0.1 +
-                Math.sin(time * 2.7) * 0.05;
+                Math.sin(time * 2.7) * 0.05
+            );
 
             const baseIntensity = mood > 25 ? 1.2 : mood < -25 ? 0.4 : 0.8;
 

@@ -27,7 +27,7 @@ let state: ComboState = {
     powerModeEndTime: 0,
 };
 
-const COMBO_TIMEOUT = 1500; // 1.5s
+const COMBO_TIMEOUT = 2500; // 2.5s (more forgiving on mobile)
 const POWER_MODE_DURATION = 3000; // 3s
 const POWER_THRESHOLD = 10;
 

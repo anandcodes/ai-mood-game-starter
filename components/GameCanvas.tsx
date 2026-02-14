@@ -1,12 +1,16 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useRef } from "react";
 import * as THREE from "three";
-import { getIntensity } from "@/lib/intensityController";
-import { useSuperReward } from "@/lib/superReward";
+
+import { useAccessibility, AccessibilityPanel } from "@/components/Accessibility";
 import { useArcadeGameLogic } from "@/lib/useArcadeGameLogic";
 import { usePerformance } from "@/lib/usePerformance";
+import { getIntensity } from "@/lib/intensityController";
+import { useSuperReward } from "@/lib/superReward";
+import { ComboState } from "@/lib/comboSystem";
+import { ScoreState } from "@/lib/scoreSystem";
 
 import BackgroundParticles from "@/components/particles/BackgroundParticles";
 import MidParticles from "@/components/particles/MidParticles";
@@ -30,15 +34,14 @@ import ResonanceMeter from "@/components/ResonanceMeter";
 import RewardRenderer from "@/components/RewardRenderer";
 import RareEventRenderer from "@/components/RareEventRenderer";
 import ScoreOverlay from "@/components/ScoreOverlay";
-import { AccessibilityPanel } from "@/components/Accessibility";
 
 // New Reward Components
 import DynamicEnvironment from "@/components/DynamicEnvironment";
 import ComboExplosion from "@/components/rewards/ComboExplosion";
+import QuestOverlay from "@/components/QuestOverlay";
 import ColorWave from "@/components/rewards/ColorWave";
 import WarpEffect from "@/components/rewards/WarpEffect";
-import { ComboState } from "@/lib/comboSystem";
-import { ScoreState } from "@/lib/scoreSystem";
+
 
 interface SceneProps {
   mood: number;
@@ -47,9 +50,22 @@ interface SceneProps {
   scoreState: ScoreState;
   comboFlash: boolean;
   countMultiplier: number;
+  reducedMotion: boolean;
+  colorSafe: boolean;
+  levelUpFlash: boolean;
 }
 
-function Scene({ mood, sessionTime, comboState, scoreState, comboFlash, countMultiplier }: SceneProps) {
+function Scene({
+  mood,
+  sessionTime,
+  comboState,
+  scoreState,
+  comboFlash,
+  countMultiplier,
+  reducedMotion,
+  colorSafe,
+  levelUpFlash,
+}: SceneProps) {
   const lightRef = useRef<THREE.PointLight>(null!);
 
   // Phase 7: Intensity control
@@ -73,35 +89,35 @@ function Scene({ mood, sessionTime, comboState, scoreState, comboFlash, countMul
       <DynamicEnvironment score={scoreState.currentScore} mood={mood} />
 
       {/* Phase 1: visual burst on combo milestone */}
-      <ComboExplosion trigger={comboFlash} comboCount={comboState.currentCombo} />
+      {!reducedMotion && <ComboExplosion trigger={comboFlash} comboCount={comboState.currentCombo} />}
 
-      {/* Phase 3: color wave on combo milestone or power mode */}
+      {/* Phase 3: color wave on combo milestone or power mode OR LEVEL UP */}
       <ColorWave
-        trigger={comboFlash || (comboState.isPowerMode && Math.random() < 0.02)}
-        color={comboState.isPowerMode ? "#ffcc00" : "#ffffff"}
-        speed={comboState.isPowerMode ? 2.0 : 1.0}
+        trigger={(comboFlash || levelUpFlash || (comboState.isPowerMode && Math.random() < 0.02)) && !reducedMotion}
+        color={levelUpFlash ? "#00ff00" : (comboState.isPowerMode ? "#ffcc00" : "#ffffff")}
+        speed={levelUpFlash ? 3.0 : (comboState.isPowerMode ? 2.0 : 1.0)}
       />
 
-      {/* ── NEW VISUAL OVERHAUL ────────────────────────── */}
+      {/* ── VISUAL COMPONENTS ────────────────────────── */}
       <SkyField mood={mood} />
-      <BackgroundParticles countMultiplier={countMultiplier} />
-      <MidParticles mood={mood} countMultiplier={countMultiplier} />
-      <EnergyParticles combo={comboState.currentCombo} isPowerMode={comboState.isPowerMode} countMultiplier={countMultiplier} />
-      <WarpEffect combo={comboState.currentCombo} isPowerMode={comboState.isPowerMode} />
+      <BackgroundParticles countMultiplier={countMultiplier * (reducedMotion ? 0.5 : 1)} />
+      <MidParticles mood={mood} countMultiplier={countMultiplier * (reducedMotion ? 0.5 : 1)} />
+      <EnergyParticles combo={comboState.currentCombo} isPowerMode={comboState.isPowerMode} countMultiplier={countMultiplier * (reducedMotion ? 0.5 : 1)} />
+      {!reducedMotion && <WarpEffect combo={comboState.currentCombo} isPowerMode={comboState.isPowerMode} />}
       <EnergyRings combo={comboState.currentCombo} score={scoreState.currentScore} />
       <GridFloor mood={mood} combo={comboState.currentCombo} score={scoreState.currentScore} />
       {/* ───────────────────────────────────────────────── */}
 
-      <CameraController mood={mood} />
+      <CameraController mood={mood} isPowerMode={comboState.isPowerMode} reducedMotion={reducedMotion} />
       <BackgroundController mood={mood} />
       <Obstacles mood={mood} />
       <PlayerAura mood={mood} isPowerMode={comboState.isPowerMode} />
-      <EnvironmentFX mood={mood} isPowerMode={comboState.isPowerMode} />
+      <EnvironmentFX mood={mood} isPowerMode={comboState.isPowerMode} reducedMotion={reducedMotion} />
       <MoodEvents mood={mood} />
       <EnvironmentalStory mood={mood} sessionTime={sessionTime} />
 
       {/* Phase 4: Motion Trails (enhanced LightTrails) */}
-      <LightTrails mood={mood} combo={comboState.currentCombo} />
+      {!reducedMotion && <LightTrails mood={mood} combo={comboState.currentCombo} />}
 
       <RewardRenderer mood={mood} />
       <RareEventRenderer mood={mood} />
@@ -117,6 +133,8 @@ export default function GameCanvas({ started = false }: GameCanvasProps) {
   // Use custom hooks for logic and performance
   const logic = useArcadeGameLogic(started);
   const { particleCountMultiplier, enablePostProcessing, resolution } = usePerformance();
+  const { reducedMotion, colorSafe, audioOff } = useAccessibility();
+  const [levelUpFlash, setLevelUpFlash] = useState(false);
 
   return (
     <>
@@ -133,8 +151,11 @@ export default function GameCanvas({ started = false }: GameCanvasProps) {
           scoreState={logic.scoreState}
           comboFlash={logic.comboFlash}
           countMultiplier={particleCountMultiplier}
+          reducedMotion={reducedMotion}
+          colorSafe={colorSafe}
+          levelUpFlash={levelUpFlash}
         />
-        {enablePostProcessing && (
+        {enablePostProcessing && !reducedMotion && (
           <PostProcessing
             mood={logic.mood}
             isPowerMode={logic.comboState.isPowerMode}
@@ -146,7 +167,17 @@ export default function GameCanvas({ started = false }: GameCanvasProps) {
       <MoodMeter mood={logic.mood} />
       {started && <ResonanceMeter resonance={logic.resonance} />}
       {started && <ScoreOverlay scoreState={logic.scoreState} comboState={logic.comboState} />}
-      {started && <AudioEngine mood={logic.mood} />}
+      {started && <QuestOverlay
+        scoreState={logic.scoreState}
+        comboState={logic.comboState}
+        mood={logic.mood}
+        resonance={logic.resonance}
+        onLevelUp={() => {
+          setLevelUpFlash(true);
+          setTimeout(() => setLevelUpFlash(false), 2000);
+        }}
+      />}
+      {started && <AudioEngine mood={logic.mood} muted={audioOff} />}
       {started && <AccessibilityPanel />}
 
       {logic.showSummary && (

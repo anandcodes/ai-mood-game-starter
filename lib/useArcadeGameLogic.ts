@@ -78,7 +78,9 @@ export function useArcadeGameLogic(started: boolean) {
             if (metrics.clicks > 0) {
                 for (let i = 0; i < metrics.clicks; i++) {
                     registerInteraction();
-                    playClickSound();
+                    // Audio feedback with pitch based on combo
+                    const currentState = getComboState();
+                    playClickSound(0.5, currentState.currentCombo);
                 }
             }
 

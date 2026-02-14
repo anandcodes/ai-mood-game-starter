@@ -24,25 +24,33 @@ function ensureContext() {
     }
 }
 
-export function playClickSound(intensity = 0.5) {
+export function playClickSound(intensity = 0.5, combo = 0) {
     ensureContext();
     if (!audioCtx || !masterGain) return;
 
     const osc = audioCtx.createOscillator();
     const env = audioCtx.createGain();
 
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(400 + Math.random() * 200, audioCtx.currentTime); // 400-600Hz
-    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+    // Musical Pitch Scaling (Pentatonic-ish feel)
+    // Base 300Hz, shifting up by 50-100Hz per combo level
+    const baseFreq = 300;
+    const pitch = Math.min(1200, baseFreq + (combo * 60));
 
-    env.gain.setValueAtTime(intensity, audioCtx.currentTime);
-    env.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    // Add varying jitter for organic feel
+    const jitter = (Math.random() - 0.5) * 20;
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(pitch + jitter, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(100, pitch * 0.5), audioCtx.currentTime + 0.15);
+
+    env.gain.setValueAtTime(intensity * 0.8, audioCtx.currentTime);
+    env.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
 
     osc.connect(env);
     env.connect(masterGain);
 
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.15);
+    osc.stop(audioCtx.currentTime + 0.2);
 }
 
 export function playComboSound(comboCount: number) {
@@ -98,4 +106,25 @@ export function playPowerBurstSound() {
 
     osc.start();
     osc.stop(audioCtx.currentTime + 2.1);
+}
+
+export function playComboLostSound() {
+    ensureContext();
+    if (!audioCtx || !masterGain) return;
+
+    const osc = audioCtx.createOscillator();
+    const env = audioCtx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+
+    env.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    env.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+    osc.connect(env);
+    env.connect(masterGain);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.35);
 }

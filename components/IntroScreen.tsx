@@ -3,13 +3,12 @@
 import { useState, useEffect } from "react";
 
 /**
- * IntroScreen — Phase 14
+ * IntroScreen — Phase 15 (Engagement Polish)
  *
- * Title screen with:
- *   • Fade-in intro
- *   • Title + tagline
- *   • Start interaction (click to begin)
- *   • Restart session button
+ * Immersive entrance for the game:
+ *   • Ethereal shifting background
+ *   • Floating high-end typography
+ *   • Interactive "pulse" button
  */
 
 interface IntroScreenProps {
@@ -22,7 +21,6 @@ export default function IntroScreen({ onStart }: IntroScreenProps) {
     const [fadeOut, setFadeOut] = useState(false);
 
     useEffect(() => {
-        // Trigger fade in after mount
         const timer = setTimeout(() => setFadeIn(true), 100);
         return () => clearTimeout(timer);
     }, []);
@@ -32,7 +30,7 @@ export default function IntroScreen({ onStart }: IntroScreenProps) {
         setTimeout(() => {
             setVisible(false);
             onStart();
-        }, 800);
+        }, 1000);
     };
 
     if (!visible) return null;
@@ -42,38 +40,70 @@ export default function IntroScreen({ onStart }: IntroScreenProps) {
             style={{
                 ...overlayStyle,
                 opacity: fadeOut ? 0 : fadeIn ? 1 : 0,
-                transition: "opacity 0.8s ease",
+                transition: "opacity 1s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
         >
-            {/* Gradient background */}
-            <div style={bgStyle} />
+            {/* Animated Gradient Background */}
+            <div style={bgStyle}>
+                <div style={movingGlow1Style} />
+                <div style={movingGlow2Style} />
+            </div>
 
-            {/* Content */}
+            {/* Content Overflow Mask */}
             <div style={contentStyle}>
-                {/* Glow accent */}
-                <div style={glowStyle} />
+                <div style={badgeStyle}>SESSION START</div>
 
                 <h1 style={titleStyle}>
-                    AI MOOD
+                    AERIS
                     <br />
-                    <span style={titleAccentStyle}>GAME</span>
+                    <span style={titleAccentStyle}>CORE</span>
                 </h1>
 
                 <p style={taglineStyle}>
-                    A living environment that reacts to you.
+                    Calibrate your sensory interface.
                 </p>
 
-                <button onClick={handleStart} style={startButtonStyle}>
-                    <span style={{ position: "relative", zIndex: 1 }}>
-                        ENTER EXPERIENCE
-                    </span>
-                </button>
+                <div style={buttonWrapperStyle}>
+                    <button onClick={handleStart} style={startButtonStyle}>
+                        <span style={buttonTextStyle}>INITIALIZE</span>
+                        <div style={buttonAuraStyle} />
+                    </button>
+                    <div style={statusDotStyle} />
+                </div>
 
-                <p style={hintStyle}>
-                    Move your mouse and click to affect the mood.<br />
-                    Stay still to find calm.
-                </p>
+                <div style={hintGridStyle}>
+                    <div style={hintItemStyle}>
+                        <strong>CLICK</strong>
+                        <span>TO IMPACT</span>
+                    </div>
+                    <div style={dividerStyle} />
+                    <div style={hintItemStyle}>
+                        <strong>STILLNESS</strong>
+                        <span>TO CALM</span>
+                    </div>
+                </div>
             </div>
+
+            <style jsx>{`
+                @keyframes float-ethereal {
+                    0%, 100% { transform: translateY(0) translateX(0); }
+                    33% { transform: translateY(-30px) translateX(20px); }
+                    66% { transform: translateY(10px) translateX(-10px); }
+                }
+                @keyframes orbit {
+                    from { transform: rotate(0deg) translateX(50px) rotate(0deg); }
+                    to { transform: rotate(360deg) translateX(50px) rotate(-360deg); }
+                }
+                @keyframes pulse-btn {
+                    0% { box-shadow: 0 0 0 0 rgba(100, 140, 255, 0.4); }
+                    70% { box-shadow: 0 0 0 20px rgba(100, 140, 255, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(100, 140, 255, 0); }
+                }
+                button:hover .buttonAura {
+                    opacity: 1;
+                    transform: scale(1.5);
+                }
+            `}</style>
         </div>
     );
 }
@@ -87,82 +117,143 @@ const overlayStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    cursor: "pointer",
+    background: "#000",
 };
 
 const bgStyle: React.CSSProperties = {
     position: "absolute",
     inset: 0,
-    background:
-        "radial-gradient(ellipse at 50% 40%, #0d1b3e 0%, #060a14 60%, #000000 100%)",
+    overflow: "hidden",
+    background: "#05070a",
+};
+
+const movingGlow1Style: React.CSSProperties = {
+    position: "absolute",
+    top: "20%",
+    left: "20%",
+    width: "600px",
+    height: "600px",
+    background: "radial-gradient(circle, rgba(40,80,255,0.08) 0%, transparent 70%)",
+    animation: "float-ethereal 15s infinite alternate ease-in-out",
+};
+
+const movingGlow2Style: React.CSSProperties = {
+    position: "absolute",
+    bottom: "10%",
+    right: "15%",
+    width: "700px",
+    height: "700px",
+    background: "radial-gradient(circle, rgba(255,50,120,0.05) 0%, transparent 70%)",
+    animation: "float-ethereal 18s infinite alternate-reverse ease-in-out",
 };
 
 const contentStyle: React.CSSProperties = {
     position: "relative",
+    zIndex: 10,
     textAlign: "center",
     color: "#fff",
-    fontFamily: "'Inter', 'SF Pro Display', system-ui, sans-serif",
-    zIndex: 1,
+    fontFamily: "'Inter', sans-serif",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
 };
 
-const glowStyle: React.CSSProperties = {
-    position: "absolute",
-    top: "-60px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "300px",
-    height: "300px",
-    borderRadius: "50%",
-    background:
-        "radial-gradient(circle, rgba(100,140,255,0.15) 0%, transparent 70%)",
-    pointerEvents: "none",
+const badgeStyle: React.CSSProperties = {
+    fontSize: "10px",
+    letterSpacing: "5px",
+    color: "#648cff",
+    marginBottom: "20px",
+    fontWeight: 900,
+    opacity: 0.8,
 };
 
 const titleStyle: React.CSSProperties = {
-    fontSize: "clamp(3rem, 8vw, 6rem)",
-    fontWeight: 800,
-    letterSpacing: "0.05em",
-    lineHeight: 1,
+    fontSize: "clamp(4rem, 12vw, 7rem)",
+    fontWeight: 900,
+    letterSpacing: "-0.02em",
+    lineHeight: 0.9,
     margin: 0,
-    textShadow: "0 0 40px rgba(100,140,255,0.3)",
+    textShadow: "0 0 40px rgba(100,140,255,0.2)",
 };
 
 const titleAccentStyle: React.CSSProperties = {
-    background: "linear-gradient(135deg, #6699ff, #ff4488)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    fontSize: "clamp(3.5rem, 9vw, 7rem)",
+    fontSize: "1rem",
+    letterSpacing: "20px",
+    marginLeft: "20px",
+    opacity: 0.3,
+    fontWeight: 300,
+    verticalAlign: "middle",
 };
 
 const taglineStyle: React.CSSProperties = {
-    fontSize: "clamp(0.9rem, 2vw, 1.2rem)",
-    opacity: 0.5,
-    marginTop: "16px",
-    fontWeight: 300,
-    letterSpacing: "0.1em",
+    fontSize: "14px",
+    opacity: 0.4,
+    marginTop: "24px",
+    fontWeight: 400,
+    letterSpacing: "4px",
+    textTransform: "uppercase",
+};
+
+const buttonWrapperStyle: React.CSSProperties = {
+    position: "relative",
+    marginTop: "60px",
 };
 
 const startButtonStyle: React.CSSProperties = {
-    marginTop: "48px",
-    padding: "16px 48px",
-    fontSize: "14px",
-    fontWeight: 600,
-    letterSpacing: "3px",
+    padding: "20px 60px",
+    fontSize: "12px",
+    fontWeight: 900,
+    letterSpacing: "6px",
     color: "#fff",
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.15)",
-    borderRadius: "60px",
+    background: "transparent",
+    border: "1px solid rgba(255,255,255,0.2)",
+    borderRadius: "4px",
     cursor: "pointer",
     position: "relative",
     overflow: "hidden",
-    transition: "all 0.4s ease",
-    backdropFilter: "blur(10px)",
+    transition: "all 0.3s ease",
+    animation: "pulse-btn 2s infinite",
 };
 
-const hintStyle: React.CSSProperties = {
-    marginTop: "32px",
-    fontSize: "12px",
-    opacity: 0.3,
-    lineHeight: 1.8,
-    letterSpacing: "0.05em",
+const buttonTextStyle: React.CSSProperties = {
+    position: "relative",
+    zIndex: 2,
+};
+
+const buttonAuraStyle: React.CSSProperties = {
+    position: "absolute",
+    inset: 0,
+    background: "rgba(100, 140, 255, 0.1)",
+    opacity: 0,
+    transition: "all 0.4s ease",
+};
+
+const statusDotStyle: React.CSSProperties = {
+    position: "absolute",
+    top: "-10px",
+    right: "-10px",
+    width: "6px",
+    height: "6px",
+    background: "#648cff",
+    borderRadius: "50%",
+    boxShadow: "0 0 10px #648cff",
+};
+
+const hintGridStyle: React.CSSProperties = {
+    marginTop: "80px",
+    display: "flex",
+    gap: "40px",
+    alignItems: "center",
+};
+
+const hintItemStyle: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+};
+
+const dividerStyle: React.CSSProperties = {
+    width: "1px",
+    height: "20px",
+    background: "rgba(255,255,255,0.2)",
 };

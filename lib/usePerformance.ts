@@ -33,8 +33,9 @@ export function usePerformance() {
         isMobile,
         quality,
         // Derived settings
-        particleCountMultiplier: quality === "high" ? 1 : quality === "medium" ? 0.6 : 0.3,
+        // Aggressive optimization for mobile
+        particleCountMultiplier: quality === "high" ? 1 : quality === "medium" ? 0.4 : 0.2,
         enablePostProcessing: quality !== "low",
-        resolution: quality === "low" ? 0.75 : 1 // Render scale
+        resolution: quality === "high" ? 1 : quality === "medium" ? 0.9 : 0.7
     };
 }

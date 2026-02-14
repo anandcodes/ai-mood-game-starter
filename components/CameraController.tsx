@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import * as THREE from "three";
 
 /**
@@ -18,21 +18,48 @@ import * as THREE from "three";
 interface CameraControllerProps {
     mood: number;
     isPowerMode?: boolean;
+    reducedMotion?: boolean;
 }
 
 // Base camera position (the "home" the camera returns to)
 const BASE = new THREE.Vector3(0, 0, 4);
 
-export default function CameraController({ mood, isPowerMode = false }: CameraControllerProps) {
+export default function CameraController({ mood, isPowerMode = false, reducedMotion = false }: CameraControllerProps) {
     const { camera } = useThree();
 
     // Smoothed offset so transitions aren't jarring
     const smoothOffset = useRef(new THREE.Vector3(0, 0, 0));
     const targetFov = useRef(75);
 
-    useFrame((state) => {
-        const time = state.clock.elapsedTime;
+    // Trauma for screen shake (decays over time)
+    const trauma = useRef(0);
 
+    useEffect(() => {
+        const handleClick = () => {
+            if (!reducedMotion) {
+                trauma.current = Math.min(1, trauma.current + 0.3);
+            }
+        };
+        window.addEventListener("click", handleClick);
+        window.addEventListener("touchstart", handleClick); // Mobile support
+        return () => {
+            window.removeEventListener("click", handleClick);
+            window.removeEventListener("touchstart", handleClick);
+        };
+    }, [reducedMotion]);
+
+    useFrame((state) => {
+        if (reducedMotion) {
+            // Static camera for accessibility
+            camera.position.lerp(BASE, 0.1);
+            camera.lookAt(0, 0, 0);
+            return;
+        }
+
+        // Trauma decay
+        trauma.current = Math.max(0, trauma.current - 0.05);
+
+        const time = state.clock.elapsedTime;
         let targetOffset: THREE.Vector3;
 
         // ── Visual mood logic ──
@@ -64,6 +91,14 @@ export default function CameraController({ mood, isPowerMode = false }: CameraCo
             );
         }
 
+        // Add Trauma Shake
+        if (trauma.current > 0) {
+            const shake = trauma.current * trauma.current * 0.5; // quadratic falloff
+            targetOffset.x += (Math.random() - 0.5) * shake;
+            targetOffset.y += (Math.random() - 0.5) * shake;
+            targetOffset.z += (Math.random() - 0.5) * shake;
+        }
+
         // ── Phase 6: Camera Depth & Parallax ──
         // Mouse parallax (Subtle)
         targetOffset.x += state.mouse.x * 0.1;
@@ -76,15 +111,14 @@ export default function CameraController({ mood, isPowerMode = false }: CameraCo
         const lerpFactor = mood > 25 || isPowerMode ? 0.2 : 0.05;
         smoothOffset.current.lerp(targetOffset, lerpFactor);
 
-        // Apply position
         camera.position.set(
             BASE.x + smoothOffset.current.x,
             BASE.y + smoothOffset.current.y,
             BASE.z + smoothOffset.current.z
         );
 
-        // ── Dynamic FOV for Power Mode ──
-        const desiredFov = isPowerMode ? 90 : 75;
+        // ── Dynamic FOV ──
+        const desiredFov = isPowerMode ? 90 : 75 + (trauma.current * 5); // mild zoom on click
         targetFov.current += (desiredFov - targetFov.current) * 0.1; // Smooth FOV transition
 
         if (camera instanceof THREE.PerspectiveCamera) {
@@ -98,6 +132,5 @@ export default function CameraController({ mood, isPowerMode = false }: CameraCo
         camera.lookAt(0, 0, 0);
     });
 
-    // This component renders nothing visible — it only drives the camera
     return null;
 }

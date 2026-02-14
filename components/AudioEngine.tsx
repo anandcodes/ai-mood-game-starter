@@ -18,6 +18,7 @@ import { useEffect, useRef, useCallback } from "react";
 
 interface AudioEngineProps {
     mood: number;
+    muted?: boolean;
 }
 
 interface AudioNodes {
@@ -31,7 +32,7 @@ interface AudioNodes {
     master: GainNode;
 }
 
-export default function AudioEngine({ mood }: AudioEngineProps) {
+export default function AudioEngine({ mood, muted = false }: AudioEngineProps) {
     const nodesRef = useRef<AudioNodes | null>(null);
     const initAttempted = useRef(false);
 
@@ -178,14 +179,16 @@ export default function AudioEngine({ mood }: AudioEngineProps) {
         lfoGain.gain.linearRampToValueAtTime(lfoDepth, t + ramp);
 
         // ── Master volume (increased for audibility) ──
-        const vol = mood > 25
+        let vol = mood > 25
             ? mapRange(mood, 25, 100, 0.25, 0.45)
             : mood < -25
                 ? mapRange(mood, -100, -25, 0.10, 0.20)
                 : mapRange(mood, -25, 25, 0.20, 0.25);
 
+        if (muted) vol = 0;
+
         master.gain.linearRampToValueAtTime(vol, t + ramp);
-    }, [mood]);
+    }, [mood, muted]);
 
     // ── Cleanup on unmount ─────────────────────────────────
     useEffect(() => {

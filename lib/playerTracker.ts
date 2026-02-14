@@ -6,6 +6,9 @@ let idle = 0;
 if (typeof window !== "undefined") {
   window.addEventListener("click", () => clicks++);
   window.addEventListener("mousemove", () => movement++);
+  // Mobile optimization: count touch as interaction (instant, no 300ms delay)
+  window.addEventListener("touchstart", () => { clicks++; });
+  window.addEventListener("touchmove", () => { movement++; });
 }
 
 export function trackPlayer() {

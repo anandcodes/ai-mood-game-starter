@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ScoreState } from "@/lib/scoreSystem";
 import { ComboState } from "@/lib/comboSystem";
 
@@ -8,8 +8,7 @@ import { ComboState } from "@/lib/comboSystem";
  * ScoreOverlay — Phase B
  *
  * Displays Score, High Score, Current Combo, and Multiplier.
- * Uses lerp animation for Score counting.
- * Combo shakes/pulses on milestones.
+ * Allows floating text popups for "Juice".
  */
 
 interface ScoreOverlayProps {
@@ -23,14 +22,43 @@ export default function ScoreOverlay({ scoreState, comboState }: ScoreOverlayPro
     const [flash, setFlash] = useState(false);
     const [comboPop, setComboPop] = useState(false);
 
+    // Floating Text System
+    const [popups, setPopups] = useState<{ id: number; text: string; x: number; y: number; color: string }[]>([]);
+    const popupId = useRef(0);
+
+    const addPopup = (text: string, color: string = "#fff", isCenter: boolean = false) => {
+        const id = popupId.current++;
+        // Position relative to window
+        // Ensure window exists (client-side only check handled by useEffect caller)
+        const winW = typeof window !== 'undefined' ? window.innerWidth : 1000;
+        const winH = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+        const x = isCenter ? winW / 2 + (Math.random() - 0.5) * 100 : 120 + (Math.random() * 60);
+        const y = isCenter ? winH / 2 + (Math.random() - 0.5) * 100 : 80 + (Math.random() * 40);
+
+        setPopups(prev => [...prev, { id, text, x, y, color }]);
+        setTimeout(() => {
+            setPopups(prev => prev.filter(p => p.id !== id));
+        }, 800);
+    };
+
+    // Score Update
     useEffect(() => {
-        // Score update animation
         if (scoreState.currentScore !== prevScore) {
+            const diff = scoreState.currentScore - prevScore;
+            // Pop for gain
+            if (diff > 0 && prevScore > 0) {
+                const color = diff >= 100 ? "#ffcc00" : "#fff";
+                addPopup(`+${diff}`, color, false);
+            }
+
             setPrevScore(scoreState.currentScore);
+
+            // Animate number
             let startTime: number;
             const start = visualScore;
             const end = scoreState.currentScore;
-            const duration = 500; // ms
+            const duration = 500;
 
             const animate = (time: number) => {
                 if (!startTime) startTime = time;
@@ -46,59 +74,94 @@ export default function ScoreOverlay({ scoreState, comboState }: ScoreOverlayPro
         }
     }, [scoreState.currentScore]);
 
-    // Combo feedback
+    // Combo Feedback
     useEffect(() => {
         if (comboState.currentCombo > 0) {
             setComboPop(true);
             const t = setTimeout(() => setComboPop(false), 200);
+
+            // Phrases
+            if (comboState.currentCombo % 5 === 0) {
+                const phrases = ["GOOD!", "SWEET!", "SUPER!", "WOW!", "UNREAL!", "GODLIKE!"];
+                const idx = Math.min(Math.floor(comboState.currentCombo / 5) - 1, phrases.length - 1);
+                if (idx >= 0) addPopup(phrases[idx], "#ff00ff", true);
+            }
             return () => clearTimeout(t);
         }
     }, [comboState.currentCombo]);
 
-    // Power Mode feedback
+    // Power Mode
     useEffect(() => {
         if (comboState.isPowerMode) {
             setFlash(true);
-            const t = setTimeout(() => setFlash(false), 500); // long flash
+            const t = setTimeout(() => setFlash(false), 500);
             return () => clearTimeout(t);
         }
     }, [comboState.isPowerMode]);
 
     return (
-        <div style={containerStyle}>
-            {/* Score */}
-            <div style={scoreBoxStyle}>
-                <div style={labelStyle}>SCORE</div>
-                <div style={valueStyle}>{visualScore.toLocaleString()}</div>
+        <>
+            <div style={containerStyle}>
+                {/* Score */}
+                <div style={scoreBoxStyle}>
+                    <div style={labelStyle}>SCORE</div>
+                    <div style={valueStyle}>{visualScore.toLocaleString()}</div>
+                </div>
+
+                {/* High Score */}
+                {scoreState.highScore > 0 && (
+                    <div style={{ ...labelStyle, fontSize: "9px", marginTop: "4px" }}>
+                        HI: {scoreState.highScore.toLocaleString()}
+                    </div>
+                )}
+
+                {/* Combo Multiplier */}
+                {comboState.currentCombo > 1 && (
+                    <div style={{
+                        ...comboStyle,
+                        transform: comboPop ? "scale(1.4) rotate(-5deg)" : "scale(1) rotate(0deg)",
+                        color: comboState.isPowerMode ? "#ffcc00" : "#fff",
+                        textShadow: comboState.isPowerMode ? "0 0 10px #ffcc00" : "none"
+                    }}>
+                        x{comboState.multiplier} <span style={{ fontSize: "14px" }}>COMBO</span>
+                        <div style={{ fontSize: "32px", fontWeight: 800 }}>{comboState.currentCombo}</div>
+                    </div>
+                )}
+
+                {/* Power Mode Banner */}
+                {comboState.isPowerMode && (
+                    <div style={powerBannerStyle}>
+                        POWER MODE
+                    </div>
+                )}
             </div>
 
-            {/* High Score */}
-            {scoreState.highScore > 0 && (
-                <div style={{ ...labelStyle, fontSize: "9px", marginTop: "4px" }}>
-                    HI: {scoreState.highScore.toLocaleString()}
-                </div>
-            )}
-
-            {/* Combo Multiplier */}
-            {comboState.currentCombo > 1 && (
-                <div style={{
-                    ...comboStyle,
-                    transform: comboPop ? "scale(1.4) rotate(-5deg)" : "scale(1) rotate(0deg)",
-                    color: comboState.isPowerMode ? "#ffcc00" : "#fff",
-                    textShadow: comboState.isPowerMode ? "0 0 10px #ffcc00" : "none"
+            {/* Popups Layer */}
+            {popups.map(p => (
+                <div key={p.id} style={{
+                    position: "fixed",
+                    left: p.x,
+                    top: p.y,
+                    color: p.color,
+                    fontSize: "24px",
+                    fontWeight: 800,
+                    pointerEvents: "none",
+                    zIndex: 100,
+                    // Simple inline animation simulation via CSS class or just CSS text
+                    // Since inline styles can't keyframe easily without global style tag
+                    animation: "floatUp 0.8s ease-out forwards",
+                    textShadow: "0 2px 4px rgba(0,0,0,0.5)"
                 }}>
-                    x{comboState.multiplier} <span style={{ fontSize: "14px" }}>COMBO</span>
-                    <div style={{ fontSize: "32px", fontWeight: 800 }}>{comboState.currentCombo}</div>
+                    {p.text}
                 </div>
-            )}
-
-            {/* Power Mode Banner */}
-            {comboState.isPowerMode && (
-                <div style={powerBannerStyle}>
-                    POWER MODE
-                </div>
-            )}
-        </div>
+            ))}
+            <style jsx global>{`
+            @keyframes floatUp {
+                0% { opacity: 1; transform: translateY(0) scale(1); }
+                100% { opacity: 0; transform: translateY(-50px) scale(1.2); }
+            }
+        `}</style>
+        </>
     );
 }
 
