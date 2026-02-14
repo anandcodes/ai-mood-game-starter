@@ -24,9 +24,12 @@ let state: ScoreState = {
 const BASE_POINTS = 10;
 const POWER_BONUS = 50;
 
-export function addInteractionScore(multiplier: number, isPowerMode: boolean) {
-    let points = BASE_POINTS * multiplier;
-    if (isPowerMode) points += POWER_BONUS; // Massive boost during power mode
+export function addInteractionScore(multiplier: number, isPowerMode: boolean, resonance: number = 0) {
+    // Artifact Bonus: Each 25 resonance adds 0.5x to base score
+    const artifactMultiplier = 1 + (Math.floor(resonance / 25) * 0.5);
+
+    let points = BASE_POINTS * multiplier * artifactMultiplier;
+    if (isPowerMode) points += POWER_BONUS;
 
     state.currentScore += points;
     if (state.currentScore > state.highScore) {

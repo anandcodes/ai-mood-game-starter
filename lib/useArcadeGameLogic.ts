@@ -93,7 +93,7 @@ export function useArcadeGameLogic(started: boolean) {
             setComboState({ ...currentCombo });
 
             if (metrics.clicks > 0) {
-                addInteractionScore(currentCombo.multiplier, currentCombo.isPowerMode);
+                addInteractionScore(currentCombo.multiplier, currentCombo.isPowerMode, resonance);
                 setScoreState(getScoreState());
 
                 if (currentCombo.isPowerMode && currentCombo.powerModeEndTime > now + 2900) {

@@ -43,10 +43,12 @@ import ColorWave from "@/components/rewards/ColorWave";
 import WarpEffect from "@/components/rewards/WarpEffect";
 import VisorOverlay from "@/components/VisorOverlay";
 import SystemLog from "@/components/SystemLog";
+import ArtifactNotification from "@/components/ArtifactNotification";
 
 
 interface SceneProps {
   mood: number;
+  level: number;
   sessionTime: number;
   comboState: ComboState;
   scoreState: ScoreState;
@@ -59,6 +61,7 @@ interface SceneProps {
 
 function Scene({
   mood,
+  level,
   sessionTime,
   comboState,
   scoreState,
@@ -88,7 +91,7 @@ function Scene({
       <pointLight ref={lightRef} position={[2, 2, 2]} />
 
       {/* Phase 2: Dynamic Geometry replacing static mesh */}
-      <DynamicEnvironment score={scoreState.currentScore} mood={mood} />
+      <DynamicEnvironment level={level} mood={mood} />
 
       {/* Phase 1: visual burst on combo milestone */}
       {!reducedMotion && <ComboExplosion trigger={comboFlash} comboCount={comboState.currentCombo} />}
@@ -157,6 +160,7 @@ export default function GameCanvas({ started = false }: GameCanvasProps) {
         <ambientLight intensity={0.5} />
         <Scene
           mood={logic.mood}
+          level={logic.level}
           sessionTime={logic.sessionTime}
           comboState={logic.comboState}
           scoreState={logic.scoreState}
@@ -192,6 +196,7 @@ export default function GameCanvas({ started = false }: GameCanvasProps) {
         isPowerMode={logic.comboState.isPowerMode}
         resonance={logic.resonance}
       />}
+      {started && <ArtifactNotification resonance={logic.resonance} />}
       {started && <AudioEngine mood={logic.mood} level={logic.level} muted={audioOff} />}
       {started && <AccessibilityPanel />}
       <VisorOverlay isPowerMode={logic.comboState.isPowerMode} />

@@ -66,8 +66,10 @@ export default function SystemLog({ level, combo, isPowerMode, resonance }: Syst
 
     // Resonance Milestones
     useEffect(() => {
-        if (Math.floor(resonance) % 25 === 0 && resonance > 0) {
-            addLog(`SYNC: RESONANCE_AT_${Math.floor(resonance)}%`, "info");
+        const milestone = Math.floor(resonance / 25) * 25;
+        if (milestone > 0 && resonance >= milestone) {
+            addLog(`SYNC: RESONANCE_AT_${milestone}%`, "info");
+            addLog(`ARTIFACT: DATA_FRAGMENT_ACQUIRED`, "success");
         }
     }, [Math.floor(resonance / 25)]);
 
