@@ -1,62 +1,47 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 /**
- * LightTrails — Phase 18
+ * LightTrails — Phase 18 (Enhanced Phase 4)
  *
  * Signature mechanic: light trails follow the mouse cursor in 3D space.
- * The trail persists briefly, creating a painting-in-light effect.
- *
- * CALM    → long fading trails, blue
- * NEUTRAL → medium trails, white
- * CHAOTIC → short bright trails, red/orange
+ * Enhanced with Arcade Combo logic:
+ * - Combo >= 6: Brighter, wider trails
+ * - Combo >= 10 (Power Mode): Gold, massive, high opacity
  */
 
 interface LightTrailsProps {
     mood: number;
+    combo: number;
 }
 
-const TRAIL_LENGTH = 80;
+const TRAIL_LENGTH = 120; // Increased length for smooth trails
 
-export default function LightTrails({ mood }: LightTrailsProps) {
+export default function LightTrails({ mood, combo }: LightTrailsProps) {
     const pointsRef = useRef<THREE.Points>(null!);
-    const { camera, size } = useThree();
+    const { camera } = useThree();
+    const mouse = useRef(new THREE.Vector2());
 
-    const trailData = useMemo(() => {
-        const positions = new Float32Array(TRAIL_LENGTH * 3);
-        const colors = new Float32Array(TRAIL_LENGTH * 3);
-        const sizes = new Float32Array(TRAIL_LENGTH);
-
-        // Initialize all at origin
-        for (let i = 0; i < TRAIL_LENGTH; i++) {
-            positions[i * 3] = 0;
-            positions[i * 3 + 1] = 0;
-            positions[i * 3 + 2] = 0;
-            colors[i * 3] = 1;
-            colors[i * 3 + 1] = 1;
-            colors[i * 3 + 2] = 1;
-            sizes[i] = 0;
-        }
-
-        return { positions, colors, sizes };
+    // Initialize buffers once
+    const [positions, colors] = useMemo(() => {
+        return [
+            new Float32Array(TRAIL_LENGTH * 3),
+            new Float32Array(TRAIL_LENGTH * 3)
+        ];
     }, []);
 
-    // Track mouse position in normalized device coordinates
-    const mouse3D = useRef(new THREE.Vector3(0, 0, 0));
-    const mouseNDC = useRef({ x: 0, y: 0 });
-
-    // Mouse listener
-    useMemo(() => {
+    // Mouse handler
+    useEffect(() => {
         if (typeof window === "undefined") return;
-        const handler = (e: MouseEvent) => {
-            mouseNDC.current.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouseNDC.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
-        };
-        window.addEventListener("mousemove", handler);
-        return () => window.removeEventListener("mousemove", handler);
+        const handleMouseMove = (e: MouseEvent) => {
+            mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        }
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
     }, []);
 
     // Sprite texture
@@ -78,81 +63,74 @@ export default function LightTrails({ mood }: LightTrailsProps) {
     useFrame(() => {
         if (!pointsRef.current) return;
 
-        // Project mouse to 3D (on a plane z = 2 from camera)
-        const vec = new THREE.Vector3(mouseNDC.current.x, mouseNDC.current.y, 0.5);
+        // Calculate 3D mouse position
+        const vec = new THREE.Vector3(mouse.current.x, mouse.current.y, 0.5);
         vec.unproject(camera);
         const dir = vec.sub(camera.position).normalize();
-        const distance = 3; // how far from camera
-        mouse3D.current = camera.position.clone().add(dir.multiplyScalar(distance));
+        const distance = 3;
+        const target = camera.position.clone().add(dir.multiplyScalar(distance));
 
-        const pos = trailData.positions;
-        const col = trailData.colors;
-
-        // Shift trail positions down (oldest at end)
+        // Shift trail
         for (let i = TRAIL_LENGTH - 1; i > 0; i--) {
-            const i3 = i * 3;
-            const prev = (i - 1) * 3;
-            pos[i3] = pos[prev];
-            pos[i3 + 1] = pos[prev + 1];
-            pos[i3 + 2] = pos[prev + 2];
+            positions[i * 3] = positions[(i - 1) * 3];
+            positions[i * 3 + 1] = positions[(i - 1) * 3 + 1];
+            positions[i * 3 + 2] = positions[(i - 1) * 3 + 2];
         }
+        positions[0] = target.x;
+        positions[1] = target.y;
+        positions[2] = target.z;
 
-        // Set head to current mouse position
-        pos[0] = mouse3D.current.x;
-        pos[1] = mouse3D.current.y;
-        pos[2] = mouse3D.current.z;
+        // Colors & Size logic
+        const isPower = combo >= 10;
+        const isCombo = combo >= 6;
 
-        // Update colors and sizes based on position in trail
-        const targetColor =
-            mood > 25
-                ? new THREE.Color("#ff4400")
-                : mood < -25
-                    ? new THREE.Color("#2288ff")
-                    : new THREE.Color("#aaaaff");
+        let baseColor = new THREE.Color("#ffffff");
+        if (mood > 25) baseColor.set("#ff4400");
+        else if (mood < -25) baseColor.set("#2288ff");
+        else baseColor.set("#aaaaff");
+
+        if (isPower) baseColor.set("#ffcc00"); // Gold for power mode
+        else if (isCombo) baseColor.offsetHSL(0.1, 0, 0.1); // Brighter
 
         for (let i = 0; i < TRAIL_LENGTH; i++) {
-            const i3 = i * 3;
-            const t = i / TRAIL_LENGTH; // 0 = head, 1 = tail
+            const t = i / TRAIL_LENGTH;
+            const color = baseColor.clone();
 
-            // Color fades toward dimmer version at tail
-            col[i3] = targetColor.r * (1 - t * 0.7);
-            col[i3 + 1] = targetColor.g * (1 - t * 0.7);
-            col[i3 + 2] = targetColor.b * (1 - t * 0.7);
-
-            // Size decreases along trail
-            trailData.sizes[i] = (1 - t) * 0.08;
+            // Tail fade
+            const alpha = 1 - t;
+            colors[i * 3] = color.r * alpha;
+            colors[i * 3 + 1] = color.g * alpha;
+            colors[i * 3 + 2] = color.b * alpha;
         }
 
         const geo = pointsRef.current.geometry;
-        (geo.getAttribute("position") as THREE.BufferAttribute).needsUpdate = true;
-        (geo.getAttribute("color") as THREE.BufferAttribute).needsUpdate = true;
+        geo.attributes.position.needsUpdate = true;
+        geo.attributes.color.needsUpdate = true;
+
+        // Dynamic point size
+        const material = pointsRef.current.material as THREE.PointsMaterial;
+        // Base size 0.08
+        material.size = isPower ? 0.25 : isCombo ? 0.15 : 0.08;
+        material.opacity = isPower ? 1.0 : 0.7;
+        // Also pulse size slightly if isPower
+        if (isPower) {
+            material.size += Math.sin(Date.now() * 0.01) * 0.05;
+        }
     });
 
     return (
         <points ref={pointsRef}>
             <bufferGeometry>
-                <bufferAttribute
-                    attach="attributes-position"
-                    count={TRAIL_LENGTH}
-                    array={trailData.positions}
-                    itemSize={3}
-                />
-                <bufferAttribute
-                    attach="attributes-color"
-                    count={TRAIL_LENGTH}
-                    array={trailData.colors}
-                    itemSize={3}
-                />
+                <bufferAttribute attach="attributes-position" count={TRAIL_LENGTH} array={positions} itemSize={3} />
+                <bufferAttribute attach="attributes-color" count={TRAIL_LENGTH} array={colors} itemSize={3} />
             </bufferGeometry>
             <pointsMaterial
                 size={0.08}
                 map={sprite}
                 vertexColors
                 transparent
-                opacity={0.7}
                 depthWrite={false}
                 blending={THREE.AdditiveBlending}
-                sizeAttenuation
             />
         </points>
     );

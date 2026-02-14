@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import GameCanvas from "@/components/GameCanvas";
+import dynamic from "next/dynamic";
+
+const GameCanvas = dynamic(() => import("@/components/GameCanvas"), { ssr: false });
 import IntroScreen from "@/components/IntroScreen";
 import { AccessibilityProvider } from "@/components/Accessibility";
 

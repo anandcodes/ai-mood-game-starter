@@ -1,42 +1,46 @@
 "use client";
 
-import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
+import { EffectComposer, Bloom, Vignette, ChromaticAberration, Noise } from "@react-three/postprocessing";
 import * as THREE from "three";
 
 /**
- * PostProcessing — Phase 13
+ * PostProcessing — Phase 13 (Enhanced Phase 4 Arcade)
  *
- * Subtle visual polish:
- *   • Bloom — makes bright elements glow
+ * Visual polish & Arcade Juice:
+ *   • Bloom — makes bright elements glow (intensified in power mode)
  *   • Vignette — darkened edges for cinematic focus
- *
- * Effects intensity responds to mood:
- *   CALM    → subtle bloom, deep vignette
- *   CHAOTIC → strong bloom, lighter vignette
+ *   • ChromaticAberration — glitch/distortion on high combo/chaos
+ *   • Noise — subtle texture
  */
 
 interface PostProcessingProps {
     mood: number;
+    isPowerMode?: boolean;
+    combo?: number;
 }
 
-export default function PostProcessing({ mood }: PostProcessingProps) {
-    // Bloom parameters scale with mood
-    const bloomIntensity =
-        mood > 25
-            ? THREE.MathUtils.mapLinear(mood, 25, 100, 0.6, 1.5)
-            : mood < -25
-                ? THREE.MathUtils.mapLinear(mood, -100, -25, 0.2, 0.4)
-                : 0.4;
+export default function PostProcessing({ mood, isPowerMode = false, combo = 0 }: PostProcessingProps) {
+    // ── Bloom Logic ──────────────────────────────────────────
+    // Toned down bloom to prevent flashing
+    const bloomIntensity = isPowerMode ? 1.0 : combo > 10 ? 0.6 : 0.3;
+    const bloomThreshold = 0.4;
 
-    const bloomThreshold =
-        mood > 25 ? 0.6 : mood < -25 ? 0.9 : 0.8;
+    const noiseOpacity = isPowerMode ? 0.05 : (mood > 40 ? 0.03 : 0.02);
 
-    // Vignette
-    const vignetteOffset =
-        mood > 25 ? 0.25 : mood < -25 ? 0.4 : 0.3;
+    // ── Vignette Logic ───────────────────────────────────────
+    const vignetteOffset = isPowerMode ? 0.1 : (mood > 25 ? 0.25 : 0.4);
+    const vignetteDarkness = isPowerMode ? 0.8 : (mood > 25 ? 0.6 : 0.7);
 
-    const vignetteDarkness =
-        mood > 25 ? 0.5 : mood < -25 ? 0.8 : 0.6;
+    // ── Chromatic Aberration Logic ───────────────────────────
+    // Active only during high combo or chaos
+    let aberrationOffset = new THREE.Vector2(0, 0);
+    if (isPowerMode) {
+        aberrationOffset.set(0.003, 0.003); // Strong glitch
+    } else if (combo > 8) {
+        aberrationOffset.set(0.001, 0.001);
+    } else if (mood > 50) {
+        aberrationOffset.set(0.0015, 0.0015);
+    }
 
     return (
         <EffectComposer>
@@ -46,6 +50,12 @@ export default function PostProcessing({ mood }: PostProcessingProps) {
                 luminanceSmoothing={0.4}
                 mipmapBlur
             />
+            <ChromaticAberration
+                offset={aberrationOffset} // shift red/blue channels
+                radialModulation={false}
+                modulationOffset={0}
+            />
+            {/* Noise removed for clarity */}
             <Vignette
                 offset={vignetteOffset}
                 darkness={vignetteDarkness}

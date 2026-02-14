@@ -1,436 +1,215 @@
-Yes — I’ll write a **clear implementation prompt** you can give directly to your AI coding agent so it can build the **engagement + reward system** correctly and consistently.
+AI Agent Checklist — Mood Game Enhancement Pass
 
-You can copy-paste everything below.
+This checklist focuses on polish, emotional depth, and replayability rather than adding new systems.
 
----
-
-# AI Agent Prompt — Engagement & Reward System
-
-You are working on a browser-based **AI Mood Game** built with:
-
-* Next.js
-* TypeScript
-* React Three Fiber
-* Three.js
-* No backend
-* Session-based memory
-
-The adaptive environment system is already implemented.
-
-Your task is to implement a **reward-driven engagement system** that makes the game addictive and replayable.
-
-The reward system must be **visual-first**, not score-first.
-
----
-
-# Phase A — Micro-Reward System
-
-Create a micro-reward event system.
-
-File:
-
-```
-/lib/rewardSystem.ts
-```
-
-Behavior:
-
-* Trigger small reward events every 3–7 seconds
-* Use randomized timing
-* Events depend on mood state
-
-Examples:
-
-CALM:
-
-* soft particle bloom
-* aura pulse
-* gentle light ripple
-
-NEUTRAL:
-
-* small particle swirl
-* brightness pulse
-
-CHAOTIC:
-
-* jitter burst
-* quick color flash
-* rapid particle expansion
-
-These rewards must feel satisfying but subtle.
-
----
-
-# Phase B — Resonance Meter (Progress System)
-
-Create a visible progression system.
-
-File:
-
-```
-/components/ResonanceMeter.tsx
-```
-
-Resonance should increase when:
-
-* player interacts consistently
-* mood remains stable
-* environment synchronization occurs
-
-Resonance should decrease during:
-
-* long idle periods
-* erratic interaction
-
-Range:
-
-```
-0–100
-```
-
-Display as a horizontal bar overlay.
-
-Top-center position.
-
----
-
-# Phase C — Unlock System
-
-Add session-based unlockable visuals.
-
-Create:
-
-```
-/lib/unlockSystem.ts
-```
-
-Unlock thresholds:
-
-```
-Resonance 20 → new particle color palette
-Resonance 40 → particle size variation
-Resonance 60 → secondary particle layer
-Resonance 80 → glow intensity boost
-```
-
-Unlocks apply only within the current session.
-
-No persistence beyond sessionStorage.
-
----
-
-# Phase D — Rare Reward Events
-
-Add rare environment events.
-
-Create:
-
-```
-/lib/rareEvents.ts
-```
-
-Trigger probability:
-
-* check every 5 seconds
-* low probability event
-
-Examples:
-
-CALM EVENT:
-
-* slow motion effect
-
-CHAOTIC EVENT:
-
-* particle explosion
-
-NEUTRAL EVENT:
-
-* geometry scale transformation
-
-These should feel special and noticeable.
-
----
-
-# Phase E — Session Summary Screen
-
-Create:
-
-```
-/components/SessionSummary.tsx
-```
-
-Display at session end.
-
-Show:
-
-* calm vs chaos ratio
-* dominant mood
-* resonance achieved
-* session personality type
-
-Example output:
-
-```
-Session Type: Harmonizer
-Resonance: 74
-Dominant Mood: Calm
-```
-
-Add a restart button.
-
----
-
-# Phase F — Reward Feedback Rules
-
-All rewards must include at least one:
-
-* particle response
-* light change
-* audio change
-* aura reaction
-
-Avoid:
-
-* score popups
-* text rewards during gameplay
-* blocking UI
-
-Rewards should feel **embedded in the environment**.
-
----
-
-# Implementation Constraints
-
-Do NOT:
-
-* add backend
-* add global state libraries
-* create additional render loops
-* introduce physics engines
-
-Always:
-
-* use React Three Fiber render loop
-* keep modules separated
-* keep performance stable
-
----
-
-# Design Goal
-
-The player should feel:
-
-> “The world is responding to how I behave.”
-
-Rewards should reinforce:
-
-* calm control
-* rhythmic interaction
-* emotional pacing
-
-Not fast clicking.
-
----
-
-AI Agent Prompt — Arcade Reward System
-
-You are implementing an arcade-style reward loop for the AI Mood Game.
-
-The game already includes:
-
-Mood engine
-
-Player tracking
-
-Particles
-
-Camera system
-
-Audio system
-
-Aura
-
-Obstacles
-
-Event system
-
-Session personality
-
-Now implement arcade engagement mechanics.
-
-The system must feel:
-
-fast
+The goal is to make the game feel:
 
 responsive
 
-satisfying
+alive
 
-energetic
+emotionally engaging
 
-Phase A — Combo System (Core Mechanic)
+replayable
 
-Create:
+1. Emotional Smoothness Pass
 
-/lib/comboSystem.ts
+Inspired by calming/reactive games where transitions matter.
 
+Agent tasks:
 
-Track:
+Smooth all color transitions using interpolation
 
-consecutive interactions
+Smooth particle speed changes
 
-time between interactions
+Smooth camera motion changes
 
-missed interactions
+Smooth audio transitions
 
-Behavior:
+Smooth aura scaling
 
-combo increases with rapid interaction
+No abrupt state changes unless triggered by reward events.
 
-combo resets after idle period
+2. Rhythm & Flow Pass
 
-combo multiplier affects rewards
+Mood-based games feel better when they have rhythm.
 
-Example:
+Agent tasks:
 
-combo x1 → normal
-combo x3 → brighter particles
-combo x5 → speed boost
-combo x8 → burst event
+Introduce global rhythm timing (8–12 second cycle)
 
+Sync particle motion briefly during rhythm peaks
 
-Combo timeout:
+Sync light intensity pulses
 
-1.5 seconds
+Sync aura pulses
 
-Phase B — Score System
+The environment should occasionally feel synchronized.
 
-Create:
+3. Player Influence Feedback
 
-/lib/scoreSystem.ts
+The player must clearly feel they affect the world.
 
+Agent tasks:
 
-Score sources:
+Add cursor influence field
 
-interaction
+Nearby particles react to cursor proximity
 
-obstacle avoidance
+Add ripple effect on click
 
-combo multiplier
+Add motion distortion field around player
 
-reward events
+Player presence must be visible.
 
-Formula example:
+4. Idle Behavior Design
 
-score += basePoints * comboMultiplier
+The game should still feel alive when idle.
 
+Agent tasks:
 
-Display score in top-left overlay.
+Add slow environment breathing
 
-Score must increase continuously during active play.
+Add subtle particle drift patterns
 
-Phase C — Arcade Feedback Effects
+Add slow light rotation
 
-Add strong feedback for actions.
+Add calm ambient audio modulation
 
-Examples:
+Idle state should feel intentional, not empty.
 
-screen pulse on combo increase
+5. Mood Clarity Improvements
 
-particle burst on combo milestone
+Players should recognize mood states visually.
 
-quick camera zoom
+Agent tasks:
 
-sound hit effect
+Distinct color palette per mood state
 
-These must trigger instantly.
+Distinct particle behavior per mood
 
-No slow transitions.
+Distinct camera behavior per mood
 
-Phase D — Power Burst Mechanic
+Distinct audio tone per mood
 
-Create a temporary “power mode”.
+Mood must be readable without UI.
 
-Trigger:
+6. Flow-State Mode
 
-combo >= 10
+Inspired by flow-based interaction games.
 
+Agent tasks:
 
-Duration:
+Detect consistent interaction rhythm
 
-3 seconds
+Enter “flow mode” temporarily
 
+Increase symmetry
 
-Effects:
+Smooth particle motion
 
-particle intensity doubles
+Harmonize colors
 
-obstacle speed slows
+Reduce obstacle aggression
 
-audio intensifies
+Flow mode should feel rewarding and calming.
 
-glow increases
+7. Anticipation System
 
-This should feel like an arcade reward moment.
+Engagement increases when players anticipate events.
 
-Phase E — Reward Timing System
+Agent tasks:
 
-Ensure rewards occur frequently.
+Add subtle pre-event signals
 
-Target rhythm:
+Light flicker before rare events
 
-micro reward every 2–4 seconds
+particle tightening before bursts
 
-combo milestone every ~10 seconds
+audio buildup
 
-power burst occasionally
+Events should feel earned, not random.
 
-The game should never feel idle.
+8. Visual Hierarchy Pass
 
-Phase F — Arcade Session Summary
+Ensure screen clarity despite many effects.
 
-Update SessionSummary screen to show:
+Agent tasks:
 
-Final Score
-Highest Combo
-Power Bursts Triggered
-Session Personality
+Define primary visual focus
 
+Reduce brightness conflicts
 
-Add:
+balance particle density
 
-Play Again button
+maintain readable center area
 
-Implementation Rules
+Avoid visual overload.
 
-Arcade systems must be:
+9. Interaction Weight Pass
 
-immediate
+Actions should feel impactful.
 
-visible
+Agent tasks:
 
-repeatable
+Add slight input latency smoothing
 
-predictable enough to master
+add click impulse effect
 
-Avoid:
+add small camera reaction to interaction
 
-long delays between rewards
+add aura shockwave on click
 
-subtle-only feedback
+Interaction must feel tactile.
 
-slow emotional pacing
+10. Session Arc Polish
 
-Design Goal
+Sessions should feel like journeys.
 
-The player should feel:
+Agent tasks:
 
-“I’m getting better and the game is rewarding me.”
+slow visual ramp-up at session start
 
-Not:
+stronger visuals mid-session
 
-“The environment is slowly changing.”
+calming resolution phase near end
 
-This is the key shift to arcade engagement.
+Sessions should have a beginning, middle, and end.
+
+11. Reward Timing Calibration
+
+Adjust reward pacing.
+
+Agent tasks:
+
+avoid long quiet periods
+
+ensure visible reward every few seconds
+
+maintain combo milestone rhythm
+
+balance rare event frequency
+
+Consistency is key.
+
+12. Performance Stability Pass
+
+Ensure smooth experience.
+
+Agent tasks:
+
+cap particle count dynamically
+
+reduce effects if FPS drops
+
+throttle heavy events
+
+keep render loop stable
+
+Target: stable 60 FPS.
+
+Final Goal for the Agent
+
+After this checklist, the game should feel:
+
+reactive, rhythmic, and emotionally engaging.

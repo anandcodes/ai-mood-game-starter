@@ -17,24 +17,27 @@ import * as THREE from "three";
 
 interface CameraControllerProps {
     mood: number;
+    isPowerMode?: boolean;
 }
 
 // Base camera position (the "home" the camera returns to)
 const BASE = new THREE.Vector3(0, 0, 4);
 
-export default function CameraController({ mood }: CameraControllerProps) {
+export default function CameraController({ mood, isPowerMode = false }: CameraControllerProps) {
     const { camera } = useThree();
 
     // Smoothed offset so transitions aren't jarring
     const smoothOffset = useRef(new THREE.Vector3(0, 0, 0));
+    const targetFov = useRef(75);
 
     useFrame((state) => {
         const time = state.clock.elapsedTime;
 
         let targetOffset: THREE.Vector3;
 
+        // ── Visual mood logic ──
         if (mood < -25) {
-            // ── CALM — slow floating orbit ──────────────────────
+            // CALM
             const floatSpeed = 0.3;
             const floatRadius = 0.35;
             targetOffset = new THREE.Vector3(
@@ -43,21 +46,15 @@ export default function CameraController({ mood }: CameraControllerProps) {
                 Math.sin(time * floatSpeed * 0.5) * 0.15
             );
         } else if (mood > 25) {
-            // ── CHAOTIC — shake / tremor ────────────────────────
-            const intensity = THREE.MathUtils.mapLinear(
-                Math.abs(mood),
-                25,
-                100,
-                0.02,
-                0.12
-            );
+            // CHAOTIC
+            const intensity = THREE.MathUtils.mapLinear(Math.abs(mood), 25, 100, 0.02, 0.12);
             targetOffset = new THREE.Vector3(
                 (Math.random() - 0.5) * intensity,
                 (Math.random() - 0.5) * intensity,
                 (Math.random() - 0.5) * intensity * 0.5
             );
         } else {
-            // ── NEUTRAL — very subtle drift ─────────────────────
+            // NEUTRAL
             const driftSpeed = 0.15;
             const driftRadius = 0.06;
             targetOffset = new THREE.Vector3(
@@ -67,19 +64,37 @@ export default function CameraController({ mood }: CameraControllerProps) {
             );
         }
 
-        // Smooth the offset so mood transitions feel organic
-        // Chaotic gets a faster lerp to feel snappy; calm gets a slower one
-        const lerpFactor = mood > 25 ? 0.3 : 0.05;
+        // ── Phase 6: Camera Depth & Parallax ──
+        // Mouse parallax (Subtle)
+        targetOffset.x += state.mouse.x * 0.1;
+        targetOffset.y += state.mouse.y * 0.1;
+
+        // Depth breathing (Z-axis oscillation)
+        targetOffset.z += Math.sin(time * 0.5) * 0.1;
+
+        // Smooth offset
+        const lerpFactor = mood > 25 || isPowerMode ? 0.2 : 0.05;
         smoothOffset.current.lerp(targetOffset, lerpFactor);
 
-        // Apply offset to base position
+        // Apply position
         camera.position.set(
             BASE.x + smoothOffset.current.x,
             BASE.y + smoothOffset.current.y,
             BASE.z + smoothOffset.current.z
         );
 
-        // Always look at origin so the subject stays centered
+        // ── Dynamic FOV for Power Mode ──
+        const desiredFov = isPowerMode ? 90 : 75;
+        targetFov.current += (desiredFov - targetFov.current) * 0.1; // Smooth FOV transition
+
+        if (camera instanceof THREE.PerspectiveCamera) {
+            if (Math.abs(camera.fov - targetFov.current) > 0.1) {
+                camera.fov = targetFov.current;
+                camera.updateProjectionMatrix();
+            }
+        }
+
+        // Always look at origin
         camera.lookAt(0, 0, 0);
     });
 
