@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -41,6 +41,8 @@ import ComboExplosion from "@/components/rewards/ComboExplosion";
 import QuestOverlay from "@/components/QuestOverlay";
 import ColorWave from "@/components/rewards/ColorWave";
 import WarpEffect from "@/components/rewards/WarpEffect";
+import VisorOverlay from "@/components/VisorOverlay";
+import SystemLog from "@/components/SystemLog";
 
 
 interface SceneProps {
@@ -136,6 +138,15 @@ export default function GameCanvas({ started = false }: GameCanvasProps) {
   const { reducedMotion, colorSafe, audioOff } = useAccessibility();
   const [levelUpFlash, setLevelUpFlash] = useState(false);
 
+  // Trigger visual celebration globally when level increases
+  useEffect(() => {
+    if (logic.level > 1) {
+      setLevelUpFlash(true);
+      const t = setTimeout(() => setLevelUpFlash(false), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [logic.level]);
+
   return (
     <>
       <Canvas
@@ -168,17 +179,22 @@ export default function GameCanvas({ started = false }: GameCanvasProps) {
       {started && <ResonanceMeter resonance={logic.resonance} />}
       {started && <ScoreOverlay scoreState={logic.scoreState} comboState={logic.comboState} />}
       {started && <QuestOverlay
+        level={logic.level}
         scoreState={logic.scoreState}
         comboState={logic.comboState}
         mood={logic.mood}
         resonance={logic.resonance}
-        onLevelUp={() => {
-          setLevelUpFlash(true);
-          setTimeout(() => setLevelUpFlash(false), 2000);
-        }}
+        onLevelUp={logic.handleLevelUp}
       />}
-      {started && <AudioEngine mood={logic.mood} muted={audioOff} />}
+      {started && <SystemLog
+        level={logic.level}
+        combo={logic.comboState.currentCombo}
+        isPowerMode={logic.comboState.isPowerMode}
+        resonance={logic.resonance}
+      />}
+      {started && <AudioEngine mood={logic.mood} level={logic.level} muted={audioOff} />}
       {started && <AccessibilityPanel />}
+      <VisorOverlay isPowerMode={logic.comboState.isPowerMode} />
 
       {logic.showSummary && (
         <SessionSummary

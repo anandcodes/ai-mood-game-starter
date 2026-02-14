@@ -14,6 +14,7 @@ import { playPowerBurstSound } from "@/lib/sfxEngine";
  */
 
 interface QuestOverlayProps {
+    level: number;
     scoreState: ScoreState;
     comboState: ComboState;
     mood: number;
@@ -70,10 +71,14 @@ function generateQuest(level: number, currentScore: number, currentResonance: nu
     }
 }
 
-export default function QuestOverlay({ scoreState, comboState, mood, resonance, onLevelUp }: QuestOverlayProps) {
-    const [level, setLevel] = useState(1);
-    const [quest, setQuest] = useState<Quest>(() => generateQuest(1, scoreState.currentScore, resonance));
+export default function QuestOverlay({ level, scoreState, comboState, mood, resonance, onLevelUp }: QuestOverlayProps) {
+    const [quest, setQuest] = useState<Quest>(() => generateQuest(level, scoreState.currentScore, resonance));
     const [completedAnim, setCompletedAnim] = useState(false);
+
+    // Update quest when global level changes
+    useEffect(() => {
+        setQuest(generateQuest(level, scoreState.currentScore, resonance));
+    }, [level]);
 
     useEffect(() => {
         if (level === 1 && quest.startValue === 0 && scoreState.currentScore > 0) {
@@ -95,23 +100,18 @@ export default function QuestOverlay({ scoreState, comboState, mood, resonance, 
         if (complete) {
             setCompletedAnim(true);
             playPowerBurstSound();
-            if (onLevelUp) onLevelUp();
         }
-    }, [scoreState.currentScore, comboState, mood, resonance, quest, completedAnim, onLevelUp]);
+    }, [scoreState.currentScore, comboState, mood, resonance, quest, completedAnim]);
 
     useEffect(() => {
         if (completedAnim) {
             const timer = setTimeout(() => {
-                setLevel(prev => {
-                    const next = prev + 1;
-                    setQuest(generateQuest(next, scoreState.currentScore, resonance));
-                    return next;
-                });
+                if (onLevelUp) onLevelUp();
                 setCompletedAnim(false);
             }, 1800);
             return () => clearTimeout(timer);
         }
-    }, [completedAnim, scoreState.currentScore, resonance]);
+    }, [completedAnim, onLevelUp]);
 
     // Progress calculation
     const progress = quest.type === "score_gain" ? (scoreState.currentScore - quest.startValue) / quest.target :

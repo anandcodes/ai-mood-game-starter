@@ -18,6 +18,7 @@ import { useEffect, useRef, useCallback } from "react";
 
 interface AudioEngineProps {
     mood: number;
+    level?: number;
     muted?: boolean;
 }
 
@@ -32,7 +33,7 @@ interface AudioNodes {
     master: GainNode;
 }
 
-export default function AudioEngine({ mood, muted = false }: AudioEngineProps) {
+export default function AudioEngine({ mood, level, muted = false }: AudioEngineProps) {
     const nodesRef = useRef<AudioNodes | null>(null);
     const initAttempted = useRef(false);
 
@@ -149,12 +150,15 @@ export default function AudioEngine({ mood, muted = false }: AudioEngineProps) {
 
         // ── Frequency ──
         let baseFreq: number;
+        // Level-based tension factor (up to +20Hz at level 10)
+        const levelOffset = Math.min(20, (level || 1) * 2);
+
         if (mood < -25) {
-            baseFreq = mapRange(mood, -100, -25, 55, 80);
+            baseFreq = mapRange(mood, -100, -25, 55, 80) + levelOffset;
         } else if (mood > 25) {
-            baseFreq = mapRange(mood, 25, 100, 120, 220);
+            baseFreq = mapRange(mood, 25, 100, 120, 220) + levelOffset;
         } else {
-            baseFreq = mapRange(mood, -25, 25, 80, 120);
+            baseFreq = mapRange(mood, -25, 25, 80, 120) + levelOffset;
         }
 
         osc.frequency.linearRampToValueAtTime(baseFreq, t + ramp);
@@ -188,7 +192,7 @@ export default function AudioEngine({ mood, muted = false }: AudioEngineProps) {
         if (muted) vol = 0;
 
         master.gain.linearRampToValueAtTime(vol, t + ramp);
-    }, [mood, muted]);
+    }, [mood, level, muted]);
 
     // ── Cleanup on unmount ─────────────────────────────────
     useEffect(() => {

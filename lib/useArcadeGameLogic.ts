@@ -14,12 +14,17 @@ export function useArcadeGameLogic(started: boolean) {
     const [mood, setMood] = useState(0);
     const [sessionTime, setSessionTime] = useState(0);
     const [resonance, setResonance] = useState(0);
+    const [level, setLevel] = useState(1);
     const [showSummary, setShowSummary] = useState(false);
 
     // Arcade State
     const [scoreState, setScoreState] = useState<ScoreState>({ currentScore: 0, highScore: 0 });
     const [comboState, setComboState] = useState<ComboState>({ currentCombo: 0, maxCombo: 0, multiplier: 1, lastInteractionTime: 0, isPowerMode: false, powerModeEndTime: 0 });
     const powerBursts = useRef(0);
+
+    const handleLevelUp = useCallback(() => {
+        setLevel(prev => prev + 1);
+    }, []);
 
     // Trigger logic
     const [comboFlash, setComboFlash] = useState(false);
@@ -184,6 +189,8 @@ export function useArcadeGameLogic(started: boolean) {
         mood,
         sessionTime,
         resonance,
+        level,
+        handleLevelUp,
         showSummary,
         setShowSummary,
         scoreState,
