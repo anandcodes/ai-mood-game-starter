@@ -3,35 +3,26 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * ResonanceMeter — Phase B
+ * ResonanceMeter — Phase 16 (AERIS Overhaul)
  *
- * Visible progression system: a horizontal bar at top-center.
- *
- * Resonance (0–100) increases with:
- *   • consistent interaction
- *   • stable mood
- *   • environment sync
- *
- * Resonance decreases during:
- *   • long idle periods
- *   • erratic interaction
+ * Technical 'Sync Gauge' aesthetic.
+ * Segmented progress with ethereal glows and digital status tags.
  */
 
 interface ResonanceMeterProps {
-    resonance: number; // 0–100
+    resonance: number;
 }
 
 export default function ResonanceMeter({ resonance }: ResonanceMeterProps) {
     const [display, setDisplay] = useState(0);
     const animFrame = useRef(0);
 
-    // Smooth animation
     useEffect(() => {
         const animate = () => {
             setDisplay((prev) => {
                 const diff = resonance - prev;
-                if (Math.abs(diff) < 0.1) return resonance;
-                return prev + diff * 0.08;
+                if (Math.abs(diff) < 0.05) return resonance;
+                return prev + diff * 0.1;
             });
             animFrame.current = requestAnimationFrame(animate);
         };
@@ -41,67 +32,32 @@ export default function ResonanceMeter({ resonance }: ResonanceMeterProps) {
 
     const pct = Math.max(0, Math.min(100, display));
 
-    // Color shifts based on resonance level
-    const barColor =
-        pct >= 80
-            ? "linear-gradient(90deg, #44aaff, #aa44ff, #ff44aa)"
-            : pct >= 60
-                ? "linear-gradient(90deg, #3388ff, #8855ff)"
-                : pct >= 40
-                    ? "linear-gradient(90deg, #4488cc, #5577dd)"
-                    : pct >= 20
-                        ? "linear-gradient(90deg, #336699, #4466aa)"
-                        : "linear-gradient(90deg, #334455, #445566)";
-
-    // Glow at high resonance
-    const glow =
-        pct >= 60
-            ? `0 0 ${8 + (pct - 60) * 0.5}px rgba(100,140,255,${0.3 + (pct - 60) * 0.01})`
-            : "none";
-
-    // Unlock indicators
-    const unlockThresholds = [20, 40, 60, 80];
+    // Aesthetic color: Deep Cyan -> Bright Blue
+    const color = pct >= 80 ? "#00f3ff" : pct >= 40 ? "#648cff" : "#334466";
 
     return (
         <div style={containerStyle}>
-            {/* Label */}
-            <div style={labelStyle}>
-                <span style={{ opacity: 0.4 }}>RESONANCE</span>
-                <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
-                    {Math.round(pct)}
-                </span>
+            <div style={labelGridStyle}>
+                <div style={badgeStyle}>CORE_SYNC</div>
+                <div style={valueStyle}>{(pct / 100).toFixed(2)} [LNK]</div>
             </div>
 
-            {/* Bar track */}
             <div style={trackStyle}>
-                {/* Filled bar */}
-                <div
-                    style={{
-                        ...fillStyle,
-                        width: `${pct}%`,
-                        background: barColor,
-                        boxShadow: glow,
-                    }}
-                />
+                {/* Segments for that technical feel */}
+                <div style={segmentsContainerStyle}>
+                    {[...Array(20)].map((_, i) => (
+                        <div key={i} style={{
+                            ...segmentStyle,
+                            backgroundColor: (i / 19) * 100 <= pct ? color : "rgba(255,255,255,0.05)",
+                            boxShadow: (i / 19) * 100 <= pct ? `0 0 10px ${color}` : "none",
+                            transition: "background 0.3s ease, box-shadow 0.3s ease"
+                        }} />
+                    ))}
+                </div>
+            </div>
 
-                {/* Unlock markers */}
-                {unlockThresholds.map((threshold) => (
-                    <div
-                        key={threshold}
-                        style={{
-                            ...markerStyle,
-                            left: `${threshold}%`,
-                            background:
-                                pct >= threshold
-                                    ? "rgba(100,180,255,0.9)"
-                                    : "rgba(255,255,255,0.15)",
-                            boxShadow:
-                                pct >= threshold
-                                    ? "0 0 6px rgba(100,180,255,0.5)"
-                                    : "none",
-                        }}
-                    />
-                ))}
+            <div style={footerStyle}>
+                {pct >= 80 ? "PEAK_RESONANCE_ESTABLISHED" : "CALIBRATING_INTERMETRIC_SYNC"}
             </div>
         </div>
     );
@@ -114,45 +70,58 @@ const containerStyle: React.CSSProperties = {
     top: "16px",
     left: "50%",
     transform: "translateX(-50%)",
-    zIndex: 90,
-    width: "min(320px, 60vw)",
+    zIndex: 100,
+    width: "280px",
     pointerEvents: "none",
-    fontFamily: "'Inter', system-ui, sans-serif",
-    color: "#fff",
+    fontFamily: "'Inter', sans-serif",
 };
 
-const labelStyle: React.CSSProperties = {
+const labelGridStyle: React.CSSProperties = {
     display: "flex",
     justifyContent: "space-between",
+    alignItems: "flex-end",
+    marginBottom: "8px",
+};
+
+const badgeStyle: React.CSSProperties = {
     fontSize: "9px",
-    letterSpacing: "2px",
-    marginBottom: "4px",
+    fontWeight: 900,
+    letterSpacing: "3px",
+    color: "#fff",
+    opacity: 0.3,
+};
+
+const valueStyle: React.CSSProperties = {
+    fontSize: "11px",
+    fontWeight: 700,
+    color: "#fff",
+    letterSpacing: "1px",
+    opacity: 0.8,
+    fontVariantNumeric: "tabular-nums",
 };
 
 const trackStyle: React.CSSProperties = {
     position: "relative",
     width: "100%",
-    height: "4px",
-    borderRadius: "2px",
-    background: "rgba(255,255,255,0.06)",
-    overflow: "visible",
 };
 
-const fillStyle: React.CSSProperties = {
-    position: "absolute",
-    top: 0,
-    left: 0,
+const segmentsContainerStyle: React.CSSProperties = {
+    display: "flex",
+    gap: "3px",
+    height: "10px",
+};
+
+const segmentStyle: React.CSSProperties = {
+    flex: 1,
     height: "100%",
-    borderRadius: "2px",
-    transition: "width 0.3s ease",
+    borderRadius: "1px",
 };
 
-const markerStyle: React.CSSProperties = {
-    position: "absolute",
-    top: "-2px",
-    width: "4px",
-    height: "8px",
-    borderRadius: "2px",
-    transform: "translateX(-50%)",
-    transition: "all 0.5s ease",
+const footerStyle: React.CSSProperties = {
+    marginTop: "8px",
+    fontSize: "7px",
+    letterSpacing: "1.5px",
+    textAlign: "center",
+    opacity: 0.2,
+    textTransform: "uppercase",
 };
